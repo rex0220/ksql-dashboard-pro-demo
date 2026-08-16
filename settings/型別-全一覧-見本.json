@@ -1,0 +1,1340 @@
+{
+  "date": "2026-08-16 19:06:02",
+  "pluginName": "kSQL Dashboard Pro",
+  "pluginVersion": "1",
+  "engineVersion": "3.66.1",
+  "pluginId": "fellopeiagkdlgopghiolokkedgkijdj",
+  "appId": 4239,
+  "appName": "売上明細",
+  "sqlApps": [
+    {
+      "appId": 4239,
+      "appName": "売上明細"
+    },
+    {
+      "appId": 4240,
+      "appName": "月次目標"
+    },
+    {
+      "appId": 4241,
+      "appName": "商品分類マスタ"
+    }
+  ],
+  "config": {
+    "schemaVersion": 2,
+    "edition": "pro",
+    "views": {
+      "13335807": {
+        "layout": [
+          {
+            "i": "pane1",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 2
+          },
+          {
+            "i": "pane2",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 2
+          },
+          {
+            "i": "pane6",
+            "x": 40,
+            "y": 0,
+            "w": 20,
+            "h": 2
+          },
+          {
+            "i": "pane3",
+            "x": 0,
+            "y": 2,
+            "w": 20,
+            "h": 3
+          },
+          {
+            "i": "pane4",
+            "x": 20,
+            "y": 2,
+            "w": 20,
+            "h": 3
+          },
+          {
+            "i": "pane5",
+            "x": 40,
+            "y": 2,
+            "w": 20,
+            "h": 3
+          },
+          {
+            "i": "pane7",
+            "x": 0,
+            "y": 5,
+            "w": 36,
+            "h": 4
+          },
+          {
+            "i": "pane8",
+            "x": 36,
+            "y": 5,
+            "w": 24,
+            "h": 4
+          }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "kpi",
+            "title": "売上明細の件数",
+            "sql": "SELECT COUNT(*) FROM APP4239"
+          },
+          {
+            "id": "pane2",
+            "type": "kpi",
+            "title": "今月の売上",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "kpi",
+            "sql": "SELECT\n  CONCAT('今月の売上(前月 ',\n    FORMAT(ROUND(SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE()) - 1\n      THEN 金額 ELSE 0 END) / 10000), '#,##0'),\n    ' 万円)') AS タイトル,\n  SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE())\n      THEN 金額 ELSE 0 END) AS メイン値,\n  SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE()) - 1\n      THEN 金額 ELSE 0 END) AS 前月値\nFROM APP4239\nWHERE (売上日 = THIS_MONTH() OR 売上日 = LAST_MONTH()) AND 売上ステータス = '確定'",
+            "options": {
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "kpi",
+            "title": "今月の目標達成率",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "kpi",
+            "title": "今月の目標達成率(条件付きカラー)",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              },
+              "rules": [
+                {
+                  "target": "rate",
+                  "op": "<",
+                  "value": 90,
+                  "tone": "warn",
+                  "apply": "border"
+                },
+                {
+                  "target": "rate",
+                  "op": "<",
+                  "value": 70,
+                  "tone": "crit",
+                  "apply": "border"
+                },
+                {
+                  "target": "rate",
+                  "op": ">=",
+                  "value": 100,
+                  "tone": "good",
+                  "apply": "background"
+                }
+              ]
+            }
+          },
+          {
+            "id": "pane6",
+            "type": "kpi",
+            "title": "自分の担当分(今月)",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 担当者user in (LOGINUSER()) AND 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane7",
+            "type": "kpi",
+            "title": "部署別の売上(今月)",
+            "sql": "SELECT 部署 AS タイトル, SUM(金額) AS メイン値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY メイン値 DESC",
+            "options": {
+              "multi": true,
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane8",
+            "type": "kpi",
+            "title": "商品カテゴリ別の売上(今年・上位 7 +「その他」)",
+            "sql": "/* 上位 7 + その他。ペインの maxTiles は「他 N 件」で件数しか出ないため、\n   金額を持った「その他」は SQL 側で作る(レシピ D19) */\nCREATE TEMP TABLE #r AS\n  SELECT 商品カテゴリ, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\n  GROUP BY 商品カテゴリ;\nCREATE TEMP TABLE #t AS SELECT 商品カテゴリ, 売上 FROM #r ORDER BY 売上 DESC LIMIT 7;\nSET @other = (SELECT SUM(売上) FROM #r WHERE 商品カテゴリ NOT IN (SELECT 商品カテゴリ FROM #t));\nSELECT 商品カテゴリ AS タイトル, 売上 AS メイン値 FROM #t\nUNION ALL SELECT 'その他' AS タイトル, @other AS メイン値 FROM #t LIMIT 1;",
+            "options": {
+              "multi": true,
+              "maxTiles": 8,
+              "align": "right",
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          }
+        ],
+        "name": "KPI カードの見本",
+        "source": "individual",
+        "viewName": "【型別】KPI"
+      },
+      "13335808": {
+        "layout": [],
+        "panes": [],
+        "tabs": [
+          {
+            "id": "tab1",
+            "name": "基本の 3 つ",
+            "layout": [
+              {
+                "i": "pane1",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane2",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane3",
+                "x": 0,
+                "y": 6,
+                "w": 60,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane1",
+                "type": "table",
+                "title": "最小 — 明細をそのまま出す",
+                "sql": "SELECT 売上日, 顧客名, 商品名, 数量, 金額\nFROM APP4239\nWHERE 売上日 = THIS_MONTH()\nORDER BY 売上日 DESC"
+              },
+              {
+                "id": "pane2",
+                "type": "table",
+                "title": "明細表 + 集計行(レコードを開ける)",
+                "sql": "SELECT $id, 売上日, 顧客名, 商品カテゴリ, 商品名, 数量, 単価, 金額, 売上ステータス\nFROM APP4239\nWHERE 売上日 = THIS_MONTH()\nORDER BY 売上日 DESC",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "$id": {
+                      "hidden": true
+                    },
+                    "売上日": {
+                      "width": 100,
+                      "format": {
+                        "kind": "date",
+                        "pattern": "M/D"
+                      }
+                    },
+                    "単価": {
+                      "format": {
+                        "kind": "number",
+                        "thousandSep": true,
+                        "decimals": 0
+                      }
+                    },
+                    "金額": {
+                      "format": {
+                        "kind": "number",
+                        "thousandSep": true,
+                        "decimals": 0
+                      }
+                    }
+                  },
+                  "totals": {
+                    "数量": "sum",
+                    "金額": "sum"
+                  },
+                  "rules": [
+                    {
+                      "kind": "threshold",
+                      "column": "売上ステータス",
+                      "op": "=",
+                      "value": "取消",
+                      "tone": "warn",
+                      "scope": "row"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane3",
+                "type": "table",
+                "title": "Top 10 ランキング(行番号列)",
+                "sql": "SELECT 担当者名, 部署, COUNT(*) AS 件数, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 担当者名, 部署\nORDER BY 売上 DESC\nLIMIT 10",
+                "options": {
+                  "rowNumbers": true,
+                  "columns": {
+                    "売上": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "suffix": "円",
+                        "decimals": 0
+                      }
+                    }
+                  },
+                  "totals": {
+                    "件数": "sum",
+                    "売上": "sum"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab2",
+            "name": "SQL で作る集計",
+            "layout": [
+              {
+                "i": "pane4",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane5",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane6",
+                "x": 0,
+                "y": 6,
+                "w": 16,
+                "h": 6
+              },
+              {
+                "i": "pane7",
+                "x": 16,
+                "y": 6,
+                "w": 22,
+                "h": 6
+              },
+              {
+                "i": "pane8",
+                "x": 38,
+                "y": 6,
+                "w": 22,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane4",
+                "type": "table",
+                "title": "ウィンドウ関数と自己 JOIN — 順位・累積・前月",
+                "sql": "/* 前月は LAG ではなく自己 JOIN で取る。\n   LAG は ORDER BY が全順序と証明できず「同順内の前後関係は未規定」の警告が出る。\n   年月をキーに突き合わせれば順序に依存しないので、警告そのものが出ない */\nCREATE TEMP TABLE #月次 AS\n  SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\n  GROUP BY DATE_FORMAT(売上日, '%Y-%m');\nCREATE TEMP TABLE #キー付 AS\n  SELECT 年月, 売上, DATE_FORMAT(DATE_ADD(CONCAT(年月, '-01'), -1, 'MONTH'), '%Y-%m') AS 前月キー\n  FROM #月次;\n/* 累積と順位はウィンドウ関数のまま。こちらは警告が出ない\n   (累積はフレームを明示する。既定の RANGE だと同値の行が同じ値になる) */\nSELECT c.年月, c.売上,\n  RANK() OVER (ORDER BY c.売上 DESC) AS 売上順位,\n  SUM(c.売上) OVER (ORDER BY c.年月 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 累計,\n  p.売上 AS 前月\nFROM #キー付 c LEFT JOIN #月次 p ON c.前月キー = p.年月\nORDER BY c.年月 DESC;",
+                "options": {
+                  "columns": {
+                    "売上": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "累計": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "前月": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "売上順位": {
+                      "align": "right",
+                      "width": 90
+                    }
+                  },
+                  "unitInHeader": true,
+                  "rules": [
+                    {
+                      "kind": "threshold",
+                      "column": "売上順位",
+                      "op": "<=",
+                      "value": 3,
+                      "tone": "good",
+                      "bold": true
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane5",
+                "type": "table",
+                "title": "小計・総計を SQL で作る(ROLLUP / GROUPING)",
+                "sql": "/* GROUPING は小計・総計の行で 1 を返す。**そのままだとキーが空になり、\n   小計と総計がどちらも「-」で見分けが付かない。**ラベルと段を作って区別する */\nSELECT\n  CASE WHEN GROUPING(大分類) = 1 THEN '総計' ELSE 大分類 END AS 大分類,\n  CASE WHEN GROUPING(大分類) = 1 THEN ''\n       WHEN GROUPING(商品カテゴリ) = 1 THEN '小計'\n       ELSE 商品カテゴリ END AS 商品カテゴリ,\n  SUM(金額) AS 売上,\n  /* GROUPING 同士は足せない。CASE で 0=明細 / 1=小計 / 2=総計 にする */\n  CASE WHEN GROUPING(大分類) = 1 THEN 2\n       WHEN GROUPING(商品カテゴリ) = 1 THEN 1\n       ELSE 0 END AS 集計段\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY ROLLUP(大分類, 商品カテゴリ)\n/* 並び順も読み順に合わせる。大分類ごとに 明細(売上の降順)→ 小計、最後に総計。\n   GROUPING を先に置くと、小計・総計が必ずその段の末尾へ回る。\n   ORDER BY に SUM(金額) は書けないので別名の 売上 を使う */\nORDER BY GROUPING(大分類), 大分類, GROUPING(商品カテゴリ), 売上 DESC",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "売上": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "suffix": "円",
+                        "decimals": 0
+                      }
+                    },
+                    "集計段": {
+                      "width": 90,
+                      "align": "center",
+                      "label": "段"
+                    }
+                  },
+                  "rules": [
+                    {
+                      "kind": "threshold",
+                      "column": "集計段",
+                      "op": "=",
+                      "value": 2,
+                      "tone": "good",
+                      "scope": "row",
+                      "bold": true
+                    },
+                    {
+                      "kind": "threshold",
+                      "column": "商品カテゴリ",
+                      "op": "=",
+                      "value": "小計",
+                      "tone": "good",
+                      "bold": true
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane6",
+                "type": "table",
+                "title": "構成比 + 上位 8 と「その他」(ペインの topN)",
+                "sql": "/* 構成比は SET @total で全体を先に出す(D19) */\nCREATE TEMP TABLE #g AS\n  SELECT 商品カテゴリ, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\n  GROUP BY 商品カテゴリ;\nSET @total = (SELECT SUM(売上) FROM #g);\nSELECT 商品カテゴリ, 売上, ROUND((売上 * 100) / @total, 1) AS 構成比\nFROM #g\nORDER BY 売上 DESC;",
+                "options": {
+                  "topN": 8,
+                  "columns": {
+                    "売上": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "suffix": "円",
+                        "decimals": 0
+                      }
+                    },
+                    "構成比": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "suffix": "%",
+                        "decimals": 1
+                      }
+                    }
+                  },
+                  "totals": {
+                    "売上": "sum"
+                  },
+                  "rules": [
+                    {
+                      "kind": "heatmap",
+                      "column": "売上"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane7",
+                "type": "table",
+                "title": "先月の目標達成率(月次目標と JOIN・ヒートマップ)",
+                "sql": "SELECT s.担当者名, SUM(s.金額) AS 実績, MAX(g.目標金額) AS 目標,\n  ROUND((SUM(s.金額) * 100) / MAX(g.目標金額), 1) AS 達成率\nFROM APP4239 s INNER JOIN APP4240 g ON s.担当者名 = g.担当者名\n/* JOIN ON の等式は 1 つまで。月の絞り込みは WHERE 側に書く */\nWHERE s.売上日 = LAST_MONTH() AND s.売上ステータス = '確定'\n  AND g.年月 = DATE_FORMAT(DATE_ADD(CURRENT_DATE(), -1, 'MONTH'), '%Y-%m')\nGROUP BY s.担当者名\nORDER BY 達成率 DESC",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "担当者名": {
+                      "width": 110
+                    },
+                    "実績": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "目標": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "達成率": {
+                      "align": "right",
+                      "width": 90,
+                      "format": {
+                        "kind": "number",
+                        "suffix": "%",
+                        "decimals": 1
+                      }
+                    }
+                  },
+                  "unitInHeader": true,
+                  "totals": {
+                    "実績": "sum",
+                    "目標": "sum"
+                  },
+                  "rules": [
+                    {
+                      "kind": "heatmap",
+                      "column": "達成率",
+                      "scheme": "diverging",
+                      "center": 100
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane8",
+                "type": "table",
+                "title": "階層の展開(WITH RECURSIVE)",
+                "sql": "WITH RECURSIVE 階層木 AS (\n  SELECT 分類コード, 分類名, 親コード, 1 AS 深さ, 分類名 AS 経路\n  FROM APP4241\n  WHERE 親コード = ''\n  UNION ALL\n  SELECT c.分類コード, c.分類名, c.親コード, p.深さ + 1, CONCAT(p.経路, ' > ', c.分類名)\n  FROM 階層木 p INNER JOIN APP4241 c ON c.親コード = p.分類コード\n)\nSELECT 深さ, 経路, 分類コード\nFROM 階層木\nORDER BY 経路",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "深さ": {
+                      "width": 70,
+                      "align": "center"
+                    },
+                    "分類コード": {
+                      "width": 110
+                    }
+                  },
+                  "rules": [
+                    {
+                      "kind": "threshold",
+                      "column": "深さ",
+                      "op": "=",
+                      "value": 1,
+                      "tone": "good",
+                      "scope": "row",
+                      "bold": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab3",
+            "name": "品質と見せ方",
+            "layout": [
+              {
+                "i": "pane9",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 8
+              },
+              {
+                "i": "pane10",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 8
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane9",
+                "type": "table",
+                "title": "データ品質チェック — 直すべき行だけ出す",
+                "sql": "SELECT $id, 伝票番号, 売上日, 顧客名, 商品名, 数量, 金額,\n  CASE WHEN 顧客名 = '' THEN '顧客名なし'\n       WHEN 数量 < 0 THEN '数量がマイナス'\n       WHEN 金額 = 0 THEN '金額ゼロ'\n       WHEN 売上日 > CURRENT_DATE() THEN '未来日付'\n       ELSE '' END AS 指摘\nFROM APP4239\nWHERE 顧客名 = '' OR 数量 < 0 OR 金額 = 0 OR 売上日 > CURRENT_DATE()\nORDER BY 指摘, 売上日",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "$id": {
+                      "hidden": true
+                    },
+                    "売上日": {
+                      "width": 110,
+                      "format": {
+                        "kind": "date",
+                        "pattern": "YYYY/MM/DD"
+                      }
+                    },
+                    "金額": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "thousandSep": true,
+                        "decimals": 0
+                      }
+                    }
+                  },
+                  "rules": [
+                    {
+                      "kind": "threshold",
+                      "column": "数量",
+                      "op": "<",
+                      "value": 0,
+                      "tone": "crit",
+                      "bold": true
+                    },
+                    {
+                      "kind": "threshold",
+                      "column": "顧客名",
+                      "op": "empty",
+                      "tone": "crit"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "pane10",
+                "type": "table",
+                "title": "見せ方の総覧(データバー・増減記号・ヒートマップ・単位を見出しへ)",
+                "sql": "/* 前月差は自己 JOIN で取る(LAG の警告を避ける。pane4 と同じ理由) */\nCREATE TEMP TABLE #月次 AS\n  SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上, COUNT(*) AS 件数\n  FROM APP4239\n  WHERE 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\n  GROUP BY DATE_FORMAT(売上日, '%Y-%m');\nCREATE TEMP TABLE #キー付 AS\n  SELECT 年月, 売上, 件数, DATE_FORMAT(DATE_ADD(CONCAT(年月, '-01'), -1, 'MONTH'), '%Y-%m') AS 前月キー\n  FROM #月次;\n/* 最古の月は相手がいない。LEFT JOIN の未一致は 0 ではなく空文字なのでガードする */\nSELECT c.年月, c.売上, c.件数,\n  CASE WHEN p.売上 = '' THEN '' ELSE c.売上 - p.売上 END AS 前月差,\n  CASE WHEN p.売上 = '' OR p.売上 = 0 THEN '' ELSE ROUND((c.売上 - p.売上) * 100 / p.売上, 1) END AS 前月比\nFROM #キー付 c LEFT JOIN #月次 p ON c.前月キー = p.年月\nORDER BY c.年月 DESC;",
+                "options": {
+                  "density": "compact",
+                  "columns": {
+                    "年月": {
+                      "width": 90
+                    },
+                    "売上": {
+                      "align": "right",
+                      "bar": true,
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "件数": {
+                      "align": "right"
+                    },
+                    "前月差": {
+                      "align": "right",
+                      "delta": "up-good",
+                      "format": {
+                        "kind": "number",
+                        "scale": "man",
+                        "decimals": 0
+                      }
+                    },
+                    "前月比": {
+                      "align": "right",
+                      "format": {
+                        "kind": "number",
+                        "suffix": "%",
+                        "decimals": 1
+                      }
+                    }
+                  },
+                  "unitInHeader": true,
+                  "columnGroups": [
+                    {
+                      "label": "金額",
+                      "columns": [
+                        "売上",
+                        "前月差"
+                      ]
+                    },
+                    {
+                      "label": "件数・伸び",
+                      "columns": [
+                        "件数",
+                        "前月比"
+                      ]
+                    }
+                  ],
+                  "rules": [
+                    {
+                      "kind": "heatmap",
+                      "column": "前月比",
+                      "scheme": "diverging",
+                      "center": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "name": "高度データ表の見本",
+        "source": "individual",
+        "viewName": "【型別】表"
+      },
+      "13335809": {
+        "layout": [],
+        "panes": [],
+        "tabs": [
+          {
+            "id": "tab1",
+            "name": "①ラベル+値 ②X軸+値",
+            "layout": [
+              {
+                "i": "pane1",
+                "x": 0,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane2",
+                "x": 20,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane3",
+                "x": 40,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane4",
+                "x": 0,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane5",
+                "x": 30,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane1",
+                "type": "bar",
+                "title": "形① ラベル + 値 — 商品カテゴリ別の件数",
+                "sql": "SELECT 商品カテゴリ, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 件数 DESC"
+              },
+              {
+                "id": "pane2",
+                "type": "barH",
+                "title": "形① 横棒 — 長いカテゴリ名はこちら",
+                "sql": "SELECT 商品カテゴリ, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 売上 DESC",
+                "options": {
+                  "valueLabels": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane3",
+                "type": "donut",
+                "title": "形① ドーナツ — 部署別の構成比",
+                "sql": "SELECT 部署, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY 売上 DESC",
+                "options": {
+                  "pieLabels": "percent",
+                  "showTotal": true,
+                  "legend": "right",
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane4",
+                "type": "line",
+                "title": "形② X 軸 + 値 — 月次の推移",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane5",
+                "type": "line",
+                "title": "形② 2 系列 — 今年 vs 前年",
+                "sql": "/* 相対日付は WHERE 全体が押し下げできる形でないと使えない。\n   MONTH() での絞り込みを AND で混ぜると拒否されるので、CTE の外へ出す */\nWITH 年比較 AS (\n  SELECT MONTH(売上日) AS 月,\n    SUM(CASE WHEN YEAR(売上日) = YEAR(CURRENT_DATE()) THEN 金額 ELSE 0 END) AS 今年,\n    SUM(CASE WHEN YEAR(売上日) = YEAR(CURRENT_DATE()) - 1 THEN 金額 ELSE 0 END) AS 前年\n  FROM APP4239\n  WHERE (売上日 = THIS_YEAR() OR 売上日 = LAST_YEAR()) AND 売上ステータス = '確定'\n  GROUP BY MONTH(売上日)\n)\nSELECT 月, 今年, 前年\nFROM 年比較\nWHERE 月 <= MONTH(CURRENT_DATE())\nORDER BY 月",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab2",
+            "name": "③ロング形式 ④値2本以上",
+            "layout": [
+              {
+                "i": "pane6",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane12",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane7",
+                "x": 0,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane14",
+                "x": 30,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane6",
+                "type": "barStacked",
+                "title": "形③ ロング形式 3 列 — 月次 × 大分類(mapping が要る)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m'), 大分類\nORDER BY 年月",
+                "options": {
+                  "mapping": {
+                    "x": "年月",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane12",
+                "type": "barStacked",
+                "title": "100% 積み上げ(pane6 と同じ SQL)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m'), 大分類\nORDER BY 年月",
+                "options": {
+                  "mapping": {
+                    "x": "年月",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "stackPercent": true,
+                  "legend": "bottom"
+                }
+              },
+              {
+                "id": "pane7",
+                "type": "combo",
+                "title": "形④ X 軸 + 値 2 本以上 — 売上(棒)と件数(線)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "bars": [
+                    "売上"
+                  ],
+                  "lines": [
+                    "件数"
+                  ],
+                  "valueLabels": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  },
+                  "valueFormatRight": {
+                    "suffix": "件",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane14",
+                "type": "barHStacked",
+                "title": "横積み上げ棒 — 地域別 × 大分類(長いカテゴリ名 × 内訳)",
+                "sql": "SELECT 地域, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 地域, 大分類\nORDER BY 地域",
+                "options": {
+                  "mapping": {
+                    "x": "地域",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "legend": "right",
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab3",
+            "name": "見せ方と軸",
+            "layout": [
+              {
+                "i": "pane8",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane10",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane9",
+                "x": 0,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane11",
+                "x": 20,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane13",
+                "x": 40,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane8",
+                "type": "line",
+                "title": "取引の無い日を 0 で埋める(GENERATE_SERIES)",
+                "sql": "/* 相対日付関数は DECLARE に書けない。CURRENT_DATE() + DATE_ADD を使う */\nDECLARE @from = DATE_ADD(CURRENT_DATE(), -29, 'DAY');\nDECLARE @to = CURRENT_DATE();\nWITH 日付系列 AS (\n  GENERATE_SERIES(@from, @to, '1 day') AS 日付\n),\n日別 AS (\n  SELECT 売上日, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上日 >= @from AND 売上ステータス = '確定'\n  GROUP BY 売上日\n)\n/* LEFT JOIN で一致しない日は 0 ではなく空文字。CASE まで書いて初めて 0 埋めになる */\nSELECT s.日付, CASE WHEN d.売上 = '' THEN 0 ELSE d.売上 END AS 売上\nFROM 日付系列 AS s LEFT JOIN 日別 AS d ON s.日付 = d.売上日\nORDER BY s.日付",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane10",
+                "type": "bar",
+                "title": "目標線を引く(データの最大を超えても必ず描く)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "refLines": [
+                    {
+                      "value": 40000000,
+                      "label": "月次目標"
+                    },
+                    {
+                      "value": 60000000,
+                      "label": "ストレッチ"
+                    }
+                  ],
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane9",
+                "type": "barH",
+                "title": "上位 5 +「その他」(件数が付く)",
+                "sql": "SELECT 担当者名, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 担当者名\nORDER BY 売上 DESC",
+                "options": {
+                  "topN": 5,
+                  "valueLabels": true,
+                  "showTotal": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane11",
+                "type": "bar",
+                "title": "値ラベル + ラベルをすべて表示(pane1 と同じ SQL)",
+                "sql": "SELECT 商品カテゴリ, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 件数 DESC",
+                "options": {
+                  "valueLabels": true,
+                  "xLabelsAll": true,
+                  "valueFormat": {
+                    "suffix": "件",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane13",
+                "type": "bar",
+                "title": "単位を軸の端へ + ヘッダーに合計",
+                "sql": "SELECT 商品カテゴリ, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 売上 DESC",
+                "options": {
+                  "unitOnAxis": true,
+                  "showTotal": true,
+                  "xLabelsAll": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "name": "グラフの見本",
+        "source": "individual",
+        "viewName": "【型別】グラフ"
+      },
+      "13335810": {
+        "layout": [
+          {
+            "i": "pane1",
+            "x": 0,
+            "y": 0,
+            "w": 60,
+            "h": 3
+          },
+          {
+            "i": "pane2",
+            "x": 0,
+            "y": 3,
+            "w": 30,
+            "h": 4
+          },
+          {
+            "i": "pane3",
+            "x": 30,
+            "y": 3,
+            "w": 30,
+            "h": 4
+          },
+          {
+            "i": "pane4",
+            "x": 0,
+            "y": 7,
+            "w": 30,
+            "h": 6
+          },
+          {
+            "i": "pane5",
+            "x": 30,
+            "y": 7,
+            "w": 30,
+            "h": 6
+          }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "markdown",
+            "title": "",
+            "sql": "",
+            "options": {
+              "fontSize": "large",
+              "markdown": "## 売上ダッシュボード\n\n数字は「確定」のみを集計しています(保留・取消は含みません)。**SQL を書かなければクエリは実行されません** — 見出しや注記だけを置くなら、この形がいちばん軽い。"
+            }
+          },
+          {
+            "id": "pane2",
+            "type": "markdown",
+            "title": "数字を文章に埋め込む",
+            "sql": "/* 埋め込み値に数値書式は効かない。桁区切りは SQL 側で作る */\nSELECT\n  FORMAT(COUNT(*), '#,##0') AS 件数,\n  FORMAT(ROUND(SUM(金額) / 10000), '#,##0') AS 売上万,\n  FORMAT(ROUND(AVG(金額)), '#,##0') AS 平均単価,\n  DATE_FORMAT(CURRENT_DATE(), '%Y年%c月') AS 対象月\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "markdown": "### {{対象月}} の実績\n\n- 確定 **{{件数}}** 件 / **{{売上万}}** 万円\n- 1 件あたり **{{平均単価}}** 円\n\n二重波かっこで囲んだ列名が、**結果の 1 行目**に置き換わります(2 行目以降は使われません)。\n**本文に記法そのものは書けません** — 置換の対象になるためです。"
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "markdown",
+            "title": "0 件のときの案内",
+            "sql": "/* COUNT(*) は対象が 0 件でも 1 行返る。だから CASE で文言を切り替えられる。\n   0 件だと 案内 列そのものが無くなり、埋め込みは - になる(空欄でも {{ }} でもない) */\nSELECT COUNT(*) AS 件数,\n  CASE WHEN COUNT(*) = 0\n       THEN '今月の「取消」はありません。'\n       ELSE CONCAT('今月の「取消」が ', FORMAT(COUNT(*), '#,##0'), ' 件あります。内容を確認してください。')\n  END AS 案内\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '取消'",
+            "options": {
+              "markdown": "### 今月の確認事項\n\n{{案内}}\n\n<span style=\"color:#c0392b;font-weight:bold\">該当 {{rowCount}} 行</span> — 行数は予約名 `rowCount` で取り出せます。\n\n> **未定義の列と空の値は `-` になります。** 文言を SQL の `CASE` で作れば、0 件でも意味のある一文を出せます。"
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "markdown",
+            "title": "運用の手順とリンク集",
+            "sql": "",
+            "options": {
+              "markdown": "### 月次の締め手順\n\n1. 「保留」の伝票を確認して確定または取消にする\n2. 取消の理由を伝票番号ごとに記録する\n3. 月次目標アプリへ翌月の目標を登録する\n\n**参照**: [kSQL 言語リファレンス](https://qiita.com/rex0220/items/e089fddf4229d74be699) / [プラグイン](https://qiita.com/rex0220/items/9c7a5a2aea28198c438b)\n\n手順やリンクを置いておくと、**一覧から離れずに済みます。**"
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "markdown",
+            "title": "書式と、除去されるもの",
+            "sql": "",
+            "options": {
+              "markdown": "| 書ける | 例 |\n| :--- | :--- |\n| 見出し・箇条書き・表 | この表そのもの |\n| 強調 | **太字** / *斜体* / `コード` |\n| 装飾つき HTML | <span style=\"color:#2e86c1\">色</span> / <span style=\"background-color:#f9e79f\">背景</span> |\n\n**除去されるもの**: `script` / `iframe` などの危険タグ、`onclick` のようなイベント属性。リンクには `rel=\"noopener noreferrer\"` が強制されます。`style` は装飾系だけ通ります。"
+            }
+          }
+        ],
+        "name": "マークダウンの見本",
+        "source": "individual",
+        "viewName": "【型別】マークダウン"
+      },
+      "13335842": {
+        "layout": [
+          {
+            "i": "pane1",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 3
+          },
+          {
+            "i": "pane3",
+            "x": 28,
+            "y": 0,
+            "w": 16,
+            "h": 3
+          },
+          {
+            "i": "pane4",
+            "x": 44,
+            "y": 0,
+            "w": 16,
+            "h": 3
+          },
+          {
+            "i": "pane5",
+            "x": 0,
+            "y": 3,
+            "w": 36,
+            "h": 5
+          },
+          {
+            "i": "pane6",
+            "x": 36,
+            "y": 3,
+            "w": 24,
+            "h": 5
+          },
+          {
+            "i": "pane7",
+            "x": 0,
+            "y": 8,
+            "w": 60,
+            "h": 5
+          }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "markdown",
+            "title": "",
+            "sql": "SELECT\n  FORMAT(COUNT(*), '#,##0') AS 件数,\n  FORMAT(ROUND(SUM(金額) / 10000), '#,##0') AS 売上万,\n  DATE_FORMAT(CURRENT_DATE(), '%Y年%c月') AS 対象月\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "markdown": "### 売上ダッシュボード — {{対象月}}\n\n確定 **{{件数}}** 件 / **{{売上万}}** 万円。数字は「確定」のみ(保留・取消は含みません)。"
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "kpi",
+            "title": "今月の売上目標達成率",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              },
+              "rules": [
+                {
+                  "target": "rate",
+                  "op": "<",
+                  "value": 90,
+                  "tone": "warn",
+                  "apply": "border"
+                },
+                {
+                  "target": "rate",
+                  "op": ">=",
+                  "value": 100,
+                  "tone": "good",
+                  "apply": "background"
+                }
+              ]
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "kpi",
+            "title": "自分の担当分(今月)",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 担当者user in (LOGINUSER()) AND 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "combo",
+            "title": "月次の売上と件数",
+            "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+            "options": {
+              "bars": [
+                "売上"
+              ],
+              "lines": [
+                "件数"
+              ],
+              "valueFormat": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              },
+              "valueFormatRight": {
+                "suffix": "件",
+                "decimals": 0
+              },
+              "refLines": [
+                {
+                  "value": 40000000,
+                  "label": "月次目標"
+                }
+              ]
+            }
+          },
+          {
+            "id": "pane6",
+            "type": "donut",
+            "title": "部署別の構成比(今年)",
+            "sql": "SELECT 部署, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY 売上 DESC",
+            "options": {
+              "pieLabels": "percent",
+              "showTotal": true,
+              "legend": "right",
+              "valueFormat": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane7",
+            "type": "table",
+            "title": "担当者別の実績 上位 5(今年)",
+            "sql": "SELECT 担当者名, 部署, COUNT(*) AS 件数, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 担当者名, 部署\nORDER BY 売上 DESC\nLIMIT 5",
+            "options": {
+              "rowNumbers": true,
+              "density": "compact",
+              "columns": {
+                "売上": {
+                  "align": "right",
+                  "bar": true,
+                  "format": {
+                    "kind": "number",
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              "totals": {
+                "件数": "sum",
+                "売上": "sum"
+              }
+            }
+          }
+        ],
+        "name": "売上ダッシュボード",
+        "source": "individual",
+        "viewName": "【型別】ダッシュボード"
+      }
+    },
+    "common": {}
+  }
+}
