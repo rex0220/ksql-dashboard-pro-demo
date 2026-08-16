@@ -107,6 +107,10 @@ node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login 
 - [rex0220 kSQL Dashboard Pro 製品紹介](https://qiita.com/rex0220/items/9c7a5a2aea28198c438b)
 - [rex0220 kSQL 言語リファレンス](https://qiita.com/rex0220/items/e089fddf4229d74be699)
 
-## 使い方について
+## ライセンス
 
-このリポジトリの中身は、記事の内容を試すためのものです。ご自身の環境で自由にお使いください。**投入データはすべて架空**で、実在の個人・団体とは関係ありません。
+[MIT License](LICENSE)。テンプレート・スクリプト・設定 JSON とも、改変して自社のアプリに使っていただいてかまいません。
+
+**投入データはすべて架空**で、実在の個人・団体とは関係ありません。
+
+> ライセンスの対象はこのリポジトリの中身だけです。**プラグイン本体(kSQL Dashboard Pro)は別途の製品**で、その利用条件はストアの規約に従います。
