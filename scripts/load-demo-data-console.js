@@ -13,8 +13,8 @@
  * **日をまたいで入れ直すと分類別の件数も金額も変わります。**
  * 記事の数字を保ったまま入れ直すときは END に撮影日を入れてください。
  *
- * 下の CONFIG を書き換えてから実行します。**APPLY: false のままなら通信しません**
- * (何件どう入るかの要約だけ Console に出ます)。
+ * 下の CONFIG に**アプリ番号を書いてから**実行します。APP が 0 のままなら何もしません。
+ * 中身だけ先に見たいときは APPLY を false にすると、通信せず要約だけ出ます。
  */
 (async () => {
   "use strict";
@@ -28,8 +28,8 @@
     /** 商品分類マスタのアプリ番号。0 にすると入れない */
     MASTER: 0,
 
-    /** false のあいだは下見(通信しません)。中身を確かめてから true にする */
-    APPLY: false,
+    /** 書き込む。**false にすると下見**になり、何件どう入るかの要約だけ出して通信しません */
+    APPLY: true,
 
     /** 投入前に既存レコードを全削除する。2 回目以降は true にする(伝票番号が重複禁止のため) */
     CLEAN: false,
@@ -355,28 +355,33 @@
 
     console.log(`件数: ${rows.length}   期間: ${rows[0].date} 〜 ${rows[rows.length - 1].date}`);
 
-    console.log("\n■ 月別(件数 / 金額)— 山谷があるか、右肩上がり一直線になっていないか");
+    /* 内訳は 50 行近くある。**畳んでおく** — 開いたままだと、この下に出す
+       「書き込みました」「下見です」がスクロールの外へ流れて読まれない */
+    console.groupCollapsed("■ 月別(件数 / 金額)— 山谷があるか、右肩上がり一直線になっていないか");
     for (const [k, v] of by((r) => r.date.slice(0, 7)).sort()) {
-      console.log(`  ${k}  ${String(v.n).padStart(3)} 件  ${man(v.amt).padStart(10)}`);
+      console.log(`${k}  ${String(v.n).padStart(3)} 件  ${man(v.amt).padStart(10)}`);
     }
+    console.groupEnd();
 
-    console.log("\n■ 分類別 — 件数の順位と金額の順位が入れ替わるか(上位 N + その他の前提)");
+    console.groupCollapsed("■ 分類別 — 件数の順位と金額の順位が入れ替わるか(上位 N + その他の前提)");
     const cats = by("category");
     const byN = [...cats].sort((a, b) => b[1].n - a[1].n);
     const byA = [...cats].sort((a, b) => b[1].amt - a[1].amt);
     for (let i = 0; i < cats.length; i++) {
-      console.log(`  ${String(i + 1).padStart(2)}. 件数 ${byN[i][0].padEnd(14)} ${String(byN[i][1].n).padStart(4)} 件`
+      console.log(`${String(i + 1).padStart(2)}. 件数 ${byN[i][0].padEnd(14)} ${String(byN[i][1].n).padStart(4)} 件`
         + `   |  金額 ${byA[i][0].padEnd(14)} ${man(byA[i][1].amt).padStart(10)}`);
     }
     const top4 = byN.slice(0, 4).reduce((s, [, v]) => s + v.n, 0);
-    console.log(`  上位 4 分類で ${Math.round((top4 / rows.length) * 100)}%(50% 前後なら狙いどおり)`);
+    console.log(`上位 4 分類で ${Math.round((top4 / rows.length) * 100)}%(50% 前後なら狙いどおり)`);
+    console.groupEnd();
 
-    console.log("\n■ 担当者別 — トップとボトムで 2.5 倍前後か(ランキングが絵になるか)");
+    console.groupCollapsed("■ 担当者別 — トップとボトムで 2.5 倍前後か(ランキングが絵になるか)");
     const reps = by("rep").sort((a, b) => b[1].amt - a[1].amt);
-    for (const [k, v] of reps) console.log(`  ${k.padEnd(10)} ${String(v.n).padStart(4)} 件  ${man(v.amt).padStart(10)}`);
+    for (const [k, v] of reps) console.log(`${k.padEnd(10)} ${String(v.n).padStart(4)} 件  ${man(v.amt).padStart(10)}`);
     /* 金額の順に並べて表示しているので、比は**件数の最大 / 最小**から取る(並び順で拾わない) */
     const ns = reps.map(([, v]) => v.n);
-    console.log(`  件数の比: ${(Math.max(...ns) / Math.min(...ns)).toFixed(1)} 倍`);
+    console.log(`件数の比: ${(Math.max(...ns) / Math.min(...ns)).toFixed(1)} 倍`);
+    console.groupEnd();
 
     const sparse = rows.filter((r) => r.category === "運用アウトソーシング");
     const sparseM = new Set(sparse.map((r) => r.date.slice(0, 7)));
@@ -524,6 +529,19 @@
     throw new Error("kintone の画面で実行してください(kintone が見つかりません)。");
   }
   if (USERS.length > REPS.length) throw new Error(`USERS は最大 ${REPS.length} 件です`);
+  /* **アプリ番号が入っていないと何もできない。** ここで止めるのが唯一の安全装置で、
+     読者は必ず自分でアプリ番号を書くことになる */
+  if (CONFIG.APPLY && !CONFIG.APP) {
+    throw new Error("CONFIG.APP に売上明細のアプリ番号を書いてください(URL の /k/4239/ の 4239 の部分)");
+  }
+
+  /* **モードを最初に出す。** 要約の後ろに置いていたら「実行しても変わらない」と
+     迷わせた(実際の報告)。読む前に、これから何が起きるかを言う */
+  console.log(CONFIG.APPLY
+    ? `▼ 書き込みます: APP${CONFIG.APP}`
+      + `${CONFIG.GOAL ? ` / APP${CONFIG.GOAL}` : ""}${CONFIG.MASTER ? ` / APP${CONFIG.MASTER}` : ""}`
+      + `${CONFIG.CLEAN ? "(既存レコードを全削除してから)" : ""}`
+    : "▼ 下見モードです(CONFIG.APPLY が false のため、何も書き込みません)");
 
   const rows = generate();
   const goals = CONFIG.GOAL ? buildGoals(rows) : null;
@@ -531,10 +549,9 @@
   summarize(rows, goals);
 
   if (!CONFIG.APPLY) {
-    console.log("\n下見モードです(何も書き込んでいません)。投入するには CONFIG.APPLY を true にしてください。");
+    console.log("\n下見モードなので、ここで終わりです。投入するには CONFIG.APPLY を true にしてください。");
     return;
   }
-  if (!CONFIG.APP) throw new Error("CONFIG.APP に売上明細のアプリ番号を指定してください");
 
   if (USERS.length) {
     console.log("\nログイン名を確認しています…");
