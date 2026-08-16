@@ -23,9 +23,26 @@ Qiita の連載「**表示タイプ別 実践ガイド**」(KPI カード / デ�
 
 **npm install は要りません。**スクリプトは依存パッケージを持たず、Node の標準機能だけで動きます。
 
+Node.js が入っていない場合:
+
+| OS | 入れ方 |
+| :--- | :--- |
+| Windows | [nodejs.org](https://nodejs.org/) の LTS 版、または `winget install OpenJS.NodeJS.LTS` |
+| macOS | [nodejs.org](https://nodejs.org/) の LTS 版、または `brew install node` |
+
+入ったかどうかは `node -v` で確認できます(`v18` 以上ならば OK)。
+
 ## 手順
 
-### 0. プラグインを入れておく
+### 0. 一式をダウンロードする
+
+このページ上部の緑の **「Code」→「Download ZIP」** で全部まとめて落とせます。git は要りません。
+
+**Windows は展開してから使ってください。**エクスプローラーで zip の中を開いたままだと、`templates/rex0220-ksql-demo1.zip` を kintone に渡せなかったり、`node` がスクリプトを見つけられなかったりします。zip を右クリック →「すべて展開」です。
+
+> 展開先のパスに日本語や空白が含まれていても動きます。
+
+### 0b. プラグインを入れておく
 
 テンプレートは売上明細アプリでプラグインを**有効にした状態**で作られています。先に kSQL Dashboard Pro をインストールしておいてください。
 
@@ -51,13 +68,16 @@ Qiita の連載「**表示タイプ別 実践ガイド**」(KPI カード / デ�
 
 **テンプレートにレコードは含まれません。**スクリプトで入れます。
 
-```bash
-# 認証(どちらか)
-export KINTONE_BASE_URL=https://xxxxx.cybozu.com
-export KINTONE_USERNAME=your-login
-export KINTONE_PASSWORD=your-password
+**認証は環境変数で渡します。**引数では渡せません(コマンド履歴にパスワードが残らないようにするため)。
 
+#### Windows(PowerShell)
+
+```powershell
 cd scripts
+
+$env:KINTONE_BASE_URL = "https://xxxxx.cybozu.com"
+$env:KINTONE_USERNAME = "your-login"
+$env:KINTONE_PASSWORD = "your-password"
 
 # 下見。通信せず、何件どう入るかの要約だけ出す
 node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
@@ -66,7 +86,43 @@ node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
 node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
 ```
 
+> `$env:` で設定した値は**そのウィンドウを閉じるまで**有効です。設定と実行は同じウィンドウで行ってください。
+>
+> スクリプトの実行ポリシーは関係ありません。`.ps1` ではなく `node` に `.mjs` を渡しているだけなので、`Set-ExecutionPolicy` は不要です。
+
+#### Windows(コマンドプロンプト)
+
+```bat
+cd scripts
+
+set KINTONE_BASE_URL=https://xxxxx.cybozu.com
+set KINTONE_USERNAME=your-login
+set KINTONE_PASSWORD=your-password
+
+node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
+node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
+```
+
+> `set` の行は **`=` の前後に空白を入れない**でください。入れると空白ごと値になります。
+
+#### macOS / Linux
+
+```bash
+cd scripts
+
+export KINTONE_BASE_URL=https://xxxxx.cybozu.com
+export KINTONE_USERNAME=your-login
+export KINTONE_PASSWORD=your-password
+
+node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
+node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
+```
+
+#### 共通
+
 `--app` などには**ご自身の環境のアプリ番号**(URL の `/k/4239/` の部分)を入れます。
+
+API トークンを使うこともできます。その場合は `KINTONE_USERNAME` / `KINTONE_PASSWORD` の代わりに `KINTONE_API_TOKEN` を設定し、**3 アプリとも「レコード閲覧・追加・削除」を許可**してください。
 
 | 引数 | 意味 |
 | :--- | :--- |
