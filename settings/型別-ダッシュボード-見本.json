@@ -1,0 +1,198 @@
+{
+  "date": "2026-08-15 00:00:00",
+  "pluginName": "kSQL Dashboard Pro",
+  "pluginVersion": "1",
+  "engineVersion": "3.66.1",
+  "appId": 4239,
+  "appName": "売上明細",
+  "sqlApps": [
+    {
+      "appId": 4239,
+      "appName": "売上明細"
+    },
+    {
+      "appId": 4240,
+      "appName": "月次目標"
+    }
+  ],
+  "config": {
+    "schemaVersion": 2,
+    "edition": "pro",
+    "views": {
+      "13335842": {
+        "name": "売上ダッシュボード",
+        "viewName": "【型別】ダッシュボード",
+        "layout": [
+          {
+            "i": "pane1",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 3
+          },
+          {
+            "i": "pane3",
+            "x": 28,
+            "y": 0,
+            "w": 16,
+            "h": 3
+          },
+          {
+            "i": "pane4",
+            "x": 44,
+            "y": 0,
+            "w": 16,
+            "h": 3
+          },
+          {
+            "i": "pane5",
+            "x": 0,
+            "y": 3,
+            "w": 36,
+            "h": 5
+          },
+          {
+            "i": "pane6",
+            "x": 36,
+            "y": 3,
+            "w": 24,
+            "h": 5
+          },
+          {
+            "i": "pane7",
+            "x": 0,
+            "y": 8,
+            "w": 60,
+            "h": 5
+          }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "markdown",
+            "title": "",
+            "sql": "SELECT\n  FORMAT(COUNT(*), '#,##0') AS 件数,\n  FORMAT(ROUND(SUM(金額) / 10000), '#,##0') AS 売上万,\n  DATE_FORMAT(CURRENT_DATE(), '%Y年%c月') AS 対象月\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "markdown": "### 売上ダッシュボード — {{対象月}}\n\n確定 **{{件数}}** 件 / **{{売上万}}** 万円。数字は「確定」のみ(保留・取消は含みません)。"
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "kpi",
+            "title": "今月の売上目標達成率",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              },
+              "rules": [
+                {
+                  "target": "rate",
+                  "op": "<",
+                  "value": 90,
+                  "tone": "warn",
+                  "apply": "border"
+                },
+                {
+                  "target": "rate",
+                  "op": ">=",
+                  "value": 100,
+                  "tone": "good",
+                  "apply": "background"
+                }
+              ]
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "kpi",
+            "title": "自分の担当分(今月)",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 担当者user in (LOGINUSER()) AND 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "combo",
+            "title": "月次の売上と件数",
+            "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+            "options": {
+              "bars": [
+                "売上"
+              ],
+              "lines": [
+                "件数"
+              ],
+              "valueFormat": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              },
+              "valueFormatRight": {
+                "suffix": "件",
+                "decimals": 0
+              },
+              "refLines": [
+                {
+                  "value": 40000000,
+                  "label": "月次目標"
+                }
+              ]
+            }
+          },
+          {
+            "id": "pane6",
+            "type": "donut",
+            "title": "部署別の構成比(今年)",
+            "sql": "SELECT 部署, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY 売上 DESC",
+            "options": {
+              "pieLabels": "percent",
+              "showTotal": true,
+              "legend": "right",
+              "valueFormat": {
+                "scale": "man",
+                "suffix": "円",
+                "decimals": 0
+              }
+            }
+          },
+          {
+            "id": "pane7",
+            "type": "table",
+            "title": "担当者別の実績 上位 5(今年)",
+            "sql": "SELECT 担当者名, 部署, COUNT(*) AS 件数, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 担当者名, 部署\nORDER BY 売上 DESC\nLIMIT 5",
+            "options": {
+              "rowNumbers": true,
+              "density": "compact",
+              "columns": {
+                "売上": {
+                  "align": "right",
+                  "bar": true,
+                  "format": {
+                    "kind": "number",
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              "totals": {
+                "件数": "sum",
+                "売上": "sum"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "common": {}
+  }
+}

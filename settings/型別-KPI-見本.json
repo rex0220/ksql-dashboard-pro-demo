@@ -1,0 +1,114 @@
+{
+  "date": "2026-08-15 00:00:00",
+  "pluginName": "kSQL Dashboard Pro",
+  "pluginVersion": "1",
+  "engineVersion": "3.66.1",
+  "appId": 4239,
+  "appName": "売上明細",
+  "sqlApps": [
+    { "appId": 4239, "appName": "売上明細" },
+    { "appId": 4240, "appName": "月次目標" }
+  ],
+  "config": {
+    "schemaVersion": 2,
+    "edition": "pro",
+    "views": {
+      "13335807": {
+        "name": "KPI カードの見本",
+        "viewName": "【型別】KPI",
+        "layout": [
+          { "i": "pane1", "x": 0, "y": 0, "w": 20, "h": 2 },
+          { "i": "pane2", "x": 20, "y": 0, "w": 20, "h": 2 },
+          { "i": "pane6", "x": 40, "y": 0, "w": 20, "h": 2 },
+          { "i": "pane3", "x": 0, "y": 2, "w": 20, "h": 3 },
+          { "i": "pane4", "x": 20, "y": 2, "w": 20, "h": 3 },
+          { "i": "pane5", "x": 40, "y": 2, "w": 20, "h": 3 },
+          { "i": "pane7", "x": 0, "y": 5, "w": 36, "h": 4 },
+          { "i": "pane8", "x": 36, "y": 5, "w": 24, "h": 4 }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "kpi",
+            "title": "売上明細の件数",
+            "sql": "SELECT COUNT(*) FROM APP4239"
+          },
+          {
+            "id": "pane2",
+            "type": "kpi",
+            "title": "今月の売上",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "kpi",
+            "sql": "SELECT\n  CONCAT('今月の売上(前月 ',\n    FORMAT(ROUND(SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE()) - 1\n      THEN 金額 ELSE 0 END) / 10000), '#,##0'),\n    ' 万円)') AS タイトル,\n  SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE())\n      THEN 金額 ELSE 0 END) AS メイン値,\n  SUM(CASE WHEN YEAR(売上日) * 12 + MONTH(売上日) = YEAR(CURRENT_DATE()) * 12 + MONTH(CURRENT_DATE()) - 1\n      THEN 金額 ELSE 0 END) AS 前月値\nFROM APP4239\nWHERE (売上日 = THIS_MONTH() OR 売上日 = LAST_MONTH()) AND 売上ステータス = '確定'",
+            "options": {
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "kpi",
+            "title": "今月の目標達成率",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "kpi",
+            "title": "今月の目標達成率(条件付きカラー)",
+            "sql": "SET @goal = (SELECT SUM(目標金額) FROM APP4240 WHERE 年月 = DATE_FORMAT(CURRENT_DATE(), '%Y-%m'));\nSELECT SUM(金額) AS メイン値, @goal AS 目標値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "goalBar": true,
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 },
+              "rules": [
+                { "target": "rate", "op": "<", "value": 90, "tone": "warn", "apply": "border" },
+                { "target": "rate", "op": "<", "value": 70, "tone": "crit", "apply": "border" },
+                { "target": "rate", "op": ">=", "value": 100, "tone": "good", "apply": "background" }
+              ]
+            }
+          },
+          {
+            "id": "pane6",
+            "type": "kpi",
+            "title": "自分の担当分(今月)",
+            "sql": "SELECT SUM(金額) AS メイン値\nFROM APP4239\nWHERE 担当者user in (LOGINUSER()) AND 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          },
+          {
+            "id": "pane7",
+            "type": "kpi",
+            "title": "部署別の売上(今月)",
+            "sql": "SELECT 部署 AS タイトル, SUM(金額) AS メイン値\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY メイン値 DESC",
+            "options": {
+              "multi": true,
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          },
+          {
+            "id": "pane8",
+            "type": "kpi",
+            "title": "商品カテゴリ別の売上(今年・上位 7 +「その他」)",
+            "sql": "/* 上位 7 + その他。ペインの maxTiles は「他 N 件」で件数しか出ないため、\n   金額を持った「その他」は SQL 側で作る(レシピ D19) */\nCREATE TEMP TABLE #r AS\n  SELECT 商品カテゴリ, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\n  GROUP BY 商品カテゴリ;\nCREATE TEMP TABLE #t AS SELECT 商品カテゴリ, 売上 FROM #r ORDER BY 売上 DESC LIMIT 7;\nSET @other = (SELECT SUM(売上) FROM #r WHERE 商品カテゴリ NOT IN (SELECT 商品カテゴリ FROM #t));\nSELECT 商品カテゴリ AS タイトル, 売上 AS メイン値 FROM #t\nUNION ALL SELECT 'その他' AS タイトル, @other AS メイン値 FROM #t LIMIT 1;",
+            "options": {
+              "multi": true,
+              "maxTiles": 8,
+              "align": "right",
+              "format": { "scale": "man", "suffix": "円", "decimals": 0 }
+            }
+          }
+        ]
+      }
+    },
+    "common": {}
+  }
+}

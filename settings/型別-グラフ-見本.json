@@ -1,0 +1,370 @@
+{
+  "date": "2026-08-15 00:00:00",
+  "pluginName": "kSQL Dashboard Pro",
+  "pluginVersion": "1",
+  "engineVersion": "3.66.1",
+  "appId": 4239,
+  "appName": "売上明細",
+  "sqlApps": [
+    {
+      "appId": 4239,
+      "appName": "売上明細"
+    }
+  ],
+  "config": {
+    "schemaVersion": 2,
+    "edition": "pro",
+    "views": {
+      "13335809": {
+        "name": "グラフの見本",
+        "viewName": "【型別】グラフ",
+        "layout": [],
+        "panes": [],
+        "tabs": [
+          {
+            "id": "tab1",
+            "name": "①ラベル+値 ②X軸+値",
+            "layout": [
+              {
+                "i": "pane1",
+                "x": 0,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane2",
+                "x": 20,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane3",
+                "x": 40,
+                "y": 0,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane4",
+                "x": 0,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane5",
+                "x": 30,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane1",
+                "type": "bar",
+                "title": "形① ラベル + 値 — 商品カテゴリ別の件数",
+                "sql": "SELECT 商品カテゴリ, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 件数 DESC"
+              },
+              {
+                "id": "pane2",
+                "type": "barH",
+                "title": "形① 横棒 — 長いカテゴリ名はこちら",
+                "sql": "SELECT 商品カテゴリ, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 売上 DESC",
+                "options": {
+                  "valueLabels": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane3",
+                "type": "donut",
+                "title": "形① ドーナツ — 部署別の構成比",
+                "sql": "SELECT 部署, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 部署\nORDER BY 売上 DESC",
+                "options": {
+                  "pieLabels": "percent",
+                  "showTotal": true,
+                  "legend": "right",
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane4",
+                "type": "line",
+                "title": "形② X 軸 + 値 — 月次の推移",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane5",
+                "type": "line",
+                "title": "形② 2 系列 — 今年 vs 前年",
+                "sql": "/* 相対日付は WHERE 全体が押し下げできる形でないと使えない。\n   MONTH() での絞り込みを AND で混ぜると拒否されるので、CTE の外へ出す */\nWITH 年比較 AS (\n  SELECT MONTH(売上日) AS 月,\n    SUM(CASE WHEN YEAR(売上日) = YEAR(CURRENT_DATE()) THEN 金額 ELSE 0 END) AS 今年,\n    SUM(CASE WHEN YEAR(売上日) = YEAR(CURRENT_DATE()) - 1 THEN 金額 ELSE 0 END) AS 前年\n  FROM APP4239\n  WHERE (売上日 = THIS_YEAR() OR 売上日 = LAST_YEAR()) AND 売上ステータス = '確定'\n  GROUP BY MONTH(売上日)\n)\nSELECT 月, 今年, 前年\nFROM 年比較\nWHERE 月 <= MONTH(CURRENT_DATE())\nORDER BY 月",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab2",
+            "name": "③ロング形式 ④値2本以上",
+            "layout": [
+              {
+                "i": "pane6",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane12",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane7",
+                "x": 0,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane14",
+                "x": 30,
+                "y": 6,
+                "w": 30,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane6",
+                "type": "barStacked",
+                "title": "形③ ロング形式 3 列 — 月次 × 大分類(mapping が要る)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m'), 大分類\nORDER BY 年月",
+                "options": {
+                  "mapping": {
+                    "x": "年月",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane12",
+                "type": "barStacked",
+                "title": "100% 積み上げ(pane6 と同じ SQL)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m'), 大分類\nORDER BY 年月",
+                "options": {
+                  "mapping": {
+                    "x": "年月",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "stackPercent": true,
+                  "legend": "bottom"
+                }
+              },
+              {
+                "id": "pane7",
+                "type": "combo",
+                "title": "形④ X 軸 + 値 2 本以上 — 売上(棒)と件数(線)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "bars": [
+                    "売上"
+                  ],
+                  "lines": [
+                    "件数"
+                  ],
+                  "valueLabels": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  },
+                  "valueFormatRight": {
+                    "suffix": "件",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane14",
+                "type": "barHStacked",
+                "title": "横積み上げ棒 — 地域別 × 大分類(長いカテゴリ名 × 内訳)",
+                "sql": "SELECT 地域, 大分類, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 地域, 大分類\nORDER BY 地域",
+                "options": {
+                  "mapping": {
+                    "x": "地域",
+                    "seriesKey": "大分類",
+                    "value": "売上"
+                  },
+                  "legend": "right",
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "tab3",
+            "name": "見せ方と軸",
+            "layout": [
+              {
+                "i": "pane8",
+                "x": 0,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane10",
+                "x": 30,
+                "y": 0,
+                "w": 30,
+                "h": 6
+              },
+              {
+                "i": "pane9",
+                "x": 0,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane11",
+                "x": 20,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              },
+              {
+                "i": "pane13",
+                "x": 40,
+                "y": 6,
+                "w": 20,
+                "h": 6
+              }
+            ],
+            "panes": [
+              {
+                "id": "pane8",
+                "type": "line",
+                "title": "取引の無い日を 0 で埋める(GENERATE_SERIES)",
+                "sql": "/* 相対日付関数は DECLARE に書けない。CURRENT_DATE() + DATE_ADD を使う */\nDECLARE @from = DATE_ADD(CURRENT_DATE(), -29, 'DAY');\nDECLARE @to = CURRENT_DATE();\nWITH 日付系列 AS (\n  GENERATE_SERIES(@from, @to, '1 day') AS 日付\n),\n日別 AS (\n  SELECT 売上日, SUM(金額) AS 売上\n  FROM APP4239\n  WHERE 売上日 >= @from AND 売上ステータス = '確定'\n  GROUP BY 売上日\n)\n/* LEFT JOIN で一致しない日は 0 ではなく空文字。CASE まで書いて初めて 0 埋めになる */\nSELECT s.日付, CASE WHEN d.売上 = '' THEN 0 ELSE d.売上 END AS 売上\nFROM 日付系列 AS s LEFT JOIN 日別 AS d ON s.日付 = d.売上日\nORDER BY s.日付",
+                "options": {
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane10",
+                "type": "bar",
+                "title": "目標線を引く(データの最大を超えても必ず描く)",
+                "sql": "SELECT DATE_FORMAT(売上日, '%Y-%m') AS 年月, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定' AND 売上日 <= CURRENT_DATE()\nGROUP BY DATE_FORMAT(売上日, '%Y-%m')\nORDER BY 年月",
+                "options": {
+                  "refLines": [
+                    {
+                      "value": 40000000,
+                      "label": "月次目標"
+                    },
+                    {
+                      "value": 60000000,
+                      "label": "ストレッチ"
+                    }
+                  ],
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane9",
+                "type": "barH",
+                "title": "上位 5 +「その他」(件数が付く)",
+                "sql": "SELECT 担当者名, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 担当者名\nORDER BY 売上 DESC",
+                "options": {
+                  "topN": 5,
+                  "valueLabels": true,
+                  "showTotal": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "suffix": "円",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane11",
+                "type": "bar",
+                "title": "値ラベル + ラベルをすべて表示(pane1 と同じ SQL)",
+                "sql": "SELECT 商品カテゴリ, COUNT(*) AS 件数\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 件数 DESC",
+                "options": {
+                  "valueLabels": true,
+                  "xLabelsAll": true,
+                  "valueFormat": {
+                    "suffix": "件",
+                    "decimals": 0
+                  }
+                }
+              },
+              {
+                "id": "pane13",
+                "type": "bar",
+                "title": "単位を軸の端へ + ヘッダーに合計",
+                "sql": "SELECT 商品カテゴリ, SUM(金額) AS 売上\nFROM APP4239\nWHERE 売上日 = THIS_YEAR() AND 売上ステータス = '確定'\nGROUP BY 商品カテゴリ\nORDER BY 売上 DESC",
+                "options": {
+                  "unitOnAxis": true,
+                  "showTotal": true,
+                  "xLabelsAll": true,
+                  "valueFormat": {
+                    "scale": "man",
+                    "decimals": 0
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "common": {}
+  }
+}

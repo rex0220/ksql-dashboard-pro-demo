@@ -1,0 +1,110 @@
+{
+  "date": "2026-08-15 00:00:00",
+  "pluginName": "kSQL Dashboard Pro",
+  "pluginVersion": "1",
+  "engineVersion": "3.66.1",
+  "appId": 4239,
+  "appName": "売上明細",
+  "sqlApps": [
+    {
+      "appId": 4239,
+      "appName": "売上明細"
+    }
+  ],
+  "config": {
+    "schemaVersion": 2,
+    "edition": "pro",
+    "views": {
+      "13335810": {
+        "name": "マークダウンの見本",
+        "viewName": "【型別】マークダウン",
+        "layout": [
+          {
+            "i": "pane1",
+            "x": 0,
+            "y": 0,
+            "w": 60,
+            "h": 3
+          },
+          {
+            "i": "pane2",
+            "x": 0,
+            "y": 3,
+            "w": 30,
+            "h": 4
+          },
+          {
+            "i": "pane3",
+            "x": 30,
+            "y": 3,
+            "w": 30,
+            "h": 4
+          },
+          {
+            "i": "pane4",
+            "x": 0,
+            "y": 7,
+            "w": 30,
+            "h": 6
+          },
+          {
+            "i": "pane5",
+            "x": 30,
+            "y": 7,
+            "w": 30,
+            "h": 6
+          }
+        ],
+        "panes": [
+          {
+            "id": "pane1",
+            "type": "markdown",
+            "title": "",
+            "sql": "",
+            "options": {
+              "fontSize": "large",
+              "markdown": "## 売上ダッシュボード\n\n数字は「確定」のみを集計しています(保留・取消は含みません)。**SQL を書かなければクエリは実行されません** — 見出しや注記だけを置くなら、この形がいちばん軽い。"
+            }
+          },
+          {
+            "id": "pane2",
+            "type": "markdown",
+            "title": "数字を文章に埋め込む",
+            "sql": "/* 埋め込み値に数値書式は効かない。桁区切りは SQL 側で作る */\nSELECT\n  FORMAT(COUNT(*), '#,##0') AS 件数,\n  FORMAT(ROUND(SUM(金額) / 10000), '#,##0') AS 売上万,\n  FORMAT(ROUND(AVG(金額)), '#,##0') AS 平均単価,\n  DATE_FORMAT(CURRENT_DATE(), '%Y年%c月') AS 対象月\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '確定'",
+            "options": {
+              "markdown": "### {{対象月}} の実績\n\n- 確定 **{{件数}}** 件 / **{{売上万}}** 万円\n- 1 件あたり **{{平均単価}}** 円\n\n二重波かっこで囲んだ列名が、**結果の 1 行目**に置き換わります(2 行目以降は使われません)。\n**本文に記法そのものは書けません** — 置換の対象になるためです。"
+            }
+          },
+          {
+            "id": "pane3",
+            "type": "markdown",
+            "title": "0 件のときの案内",
+            "sql": "/* COUNT(*) は対象が 0 件でも 1 行返る。だから CASE で文言を切り替えられる。\n   0 件だと 案内 列そのものが無くなり、埋め込みは - になる(空欄でも {{ }} でもない) */\nSELECT COUNT(*) AS 件数,\n  CASE WHEN COUNT(*) = 0\n       THEN '今月の「取消」はありません。'\n       ELSE CONCAT('今月の「取消」が ', FORMAT(COUNT(*), '#,##0'), ' 件あります。内容を確認してください。')\n  END AS 案内\nFROM APP4239\nWHERE 売上日 = THIS_MONTH() AND 売上ステータス = '取消'",
+            "options": {
+              "markdown": "### 今月の確認事項\n\n{{案内}}\n\n<span style=\"color:#c0392b;font-weight:bold\">該当 {{rowCount}} 行</span> — 行数は予約名 `rowCount` で取り出せます。\n\n> **未定義の列と空の値は `-` になります。** 文言を SQL の `CASE` で作れば、0 件でも意味のある一文を出せます。"
+            }
+          },
+          {
+            "id": "pane4",
+            "type": "markdown",
+            "title": "運用の手順とリンク集",
+            "sql": "",
+            "options": {
+              "markdown": "### 月次の締め手順\n\n1. 「保留」の伝票を確認して確定または取消にする\n2. 取消の理由を伝票番号ごとに記録する\n3. 月次目標アプリへ翌月の目標を登録する\n\n**参照**: [kSQL 言語リファレンス](https://qiita.com/rex0220/items/e089fddf4229d74be699) / [プラグイン](https://qiita.com/rex0220/items/9c7a5a2aea28198c438b)\n\n手順やリンクを置いておくと、**一覧から離れずに済みます。**"
+            }
+          },
+          {
+            "id": "pane5",
+            "type": "markdown",
+            "title": "書式と、除去されるもの",
+            "sql": "",
+            "options": {
+              "markdown": "| 書ける | 例 |\n| :--- | :--- |\n| 見出し・箇条書き・表 | この表そのもの |\n| 強調 | **太字** / *斜体* / `コード` |\n| 装飾つき HTML | <span style=\"color:#2e86c1\">色</span> / <span style=\"background-color:#f9e79f\">背景</span> |\n\n**除去されるもの**: `script` / `iframe` などの危険タグ、`onclick` のようなイベント属性。リンクには `rel=\"noopener noreferrer\"` が強制されます。`style` は装飾系だけ通ります。"
+            }
+          }
+        ]
+      }
+    },
+    "common": {}
+  }
+}
