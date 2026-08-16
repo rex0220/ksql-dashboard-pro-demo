@@ -9,8 +9,8 @@ Qiita の連載「**表示タイプ別 実践ガイド**」(KPI カード / デ�
 | フォルダー | 内容 |
 | :--- | :--- |
 | `templates/` | kintone アプリテンプレート **1 本**(3 アプリ同梱) |
-| `scripts/` | データ投入スクリプト。**2 ファイルで 1 組** |
-| `settings/` | ダッシュボードの設定 JSON 5 本 |
+| `scripts/` | データ投入スクリプト **1 本**。ブラウザーの開発ツールに貼って使う |
+| `settings/` | ダッシュボードの設定 JSON |
 
 ## 必要なもの
 
@@ -19,18 +19,8 @@ Qiita の連載「**表示タイプ別 実践ガイド**」(KPI カード / デ�
 | kintone | 公式対応ブラウザの最新版(PC) |
 | プラグイン | rex0220 kSQL Dashboard Pro |
 | 権限 | アプリを作成できること(システム管理者である必要はありません) |
-| Node.js | **18 以上**。データ投入スクリプトに使う |
 
-**npm install は要りません。**スクリプトは依存パッケージを持たず、Node の標準機能だけで動きます。
-
-Node.js が入っていない場合:
-
-| OS | 入れ方 |
-| :--- | :--- |
-| Windows | [nodejs.org](https://nodejs.org/) の LTS 版、または `winget install OpenJS.NodeJS.LTS` |
-| macOS | [nodejs.org](https://nodejs.org/) の LTS 版、または `brew install node` |
-
-入ったかどうかは `node -v` で確認できます(`v18` 以上ならば OK)。
+**インストールするものはありません。**データ投入はブラウザーの開発ツール(F12)で行います。Node.js もコマンドラインも要りません。
 
 ## 手順
 
@@ -66,73 +56,46 @@ Node.js が入っていない場合:
 
 ### 2. データを入れる
 
-**テンプレートにレコードは含まれません。**スクリプトで入れます。
+**テンプレートにレコードは含まれません。**ブラウザーの開発ツールでスクリプトを走らせて入れます。
 
-**認証は環境変数で渡します。**引数では渡せません(コマンド履歴にパスワードが残らないようにするため)。
+インストールは要りません。**ログイン中のセッションをそのまま使う**ので、パスワードも API トークンも入力しません。
 
-#### Windows(PowerShell)
+1. 作った **売上明細アプリの一覧画面を開きます**(kintone の画面ならどこでもかまいません)
+2. **F12** で開発ツールを開き、**Console** タブへ移動します
+3. `scripts/load-demo-data-console.js` をテキストエディターで開き、先頭の `CONFIG` を書き換えます
 
-```powershell
-cd scripts
+   ```js
+   const CONFIG = {
+     APP: 4239,        // 売上明細のアプリ番号(URL の /k/4239/ の部分)
+     GOAL: 4240,       // 月次目標
+     MASTER: 4241,     // 商品分類マスタ
 
-$env:KINTONE_BASE_URL = "https://xxxxx.cybozu.com"
-$env:KINTONE_USERNAME = "your-login"
-$env:KINTONE_PASSWORD = "your-password"
+     APPLY: false,     // false のあいだは下見(通信しません)
+     CLEAN: false,     // 2 回目以降は true(伝票番号が重複禁止のため)
 
-# 下見。通信せず、何件どう入るかの要約だけ出す
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
+     USERS: [kintone.getLoginUser().code],
+     END: "",
+   };
+   ```
 
-# 実行
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
-```
+4. **全文をコピーして Console に貼り、Enter。**まず `APPLY: false` のまま実行してください。通信せず、何件どう入るかの要約だけが出ます
+5. 要約を見て問題なければ `APPLY: true` にして、もう一度貼って Enter
 
-> `$env:` で設定した値は**そのウィンドウを閉じるまで**有効です。設定と実行は同じウィンドウで行ってください。
+> **Chrome / Edge は初回に貼り付けを拒みます。**「危険な可能性のあるコードを貼り付けようとしています」と出たら、指示どおり Console に `allow pasting` と入力して Enter を押してから貼り直してください。
 >
-> スクリプトの実行ポリシーは関係ありません。`.ps1` ではなく `node` に `.mjs` を渡しているだけなので、`Set-ExecutionPolicy` は不要です。
+> **やり直すときは `CLEAN: true`。**伝票番号は重複禁止なので、消さずに 2 回入れると途中で止まります。
 
-#### Windows(コマンドプロンプト)
+#### CONFIG の項目
 
-```bat
-cd scripts
-
-set KINTONE_BASE_URL=https://xxxxx.cybozu.com
-set KINTONE_USERNAME=your-login
-set KINTONE_PASSWORD=your-password
-
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
-```
-
-> `set` の行は **`=` の前後に空白を入れない**でください。入れると空白ごと値になります。
-
-#### macOS / Linux
-
-```bash
-cd scripts
-
-export KINTONE_BASE_URL=https://xxxxx.cybozu.com
-export KINTONE_USERNAME=your-login
-export KINTONE_PASSWORD=your-password
-
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241
-node load-demo-data.mjs --app 4239 --goal 4240 --master 4241 --users your-login --apply
-```
-
-#### 共通
-
-`--app` などには**ご自身の環境のアプリ番号**(URL の `/k/4239/` の部分)を入れます。
-
-API トークンを使うこともできます。その場合は `KINTONE_USERNAME` / `KINTONE_PASSWORD` の代わりに `KINTONE_API_TOKEN` を設定し、**3 アプリとも「レコード閲覧・追加・削除」を許可**してください。
-
-| 引数 | 意味 |
+| 項目 | 意味 |
 | :--- | :--- |
-| `--app` / `--goal` / `--master` | 3 アプリのアプリ番号 |
-| `--users` | ユーザー選択に入れるログイン名。カンマ区切りで複数 |
-| `--apply` | これが無いと下見(通信しません) |
-| `--clean` | 既存レコードを全削除してから入れる |
-| `--end YYYY-MM-DD` | 「今日」の代わりに使う基準日 |
+| `APP` / `GOAL` / `MASTER` | 3 アプリのアプリ番号。`GOAL` と `MASTER` は `0` にすると入れない |
+| `APPLY` | `true` で書き込む。`false` は下見(通信しません) |
+| `CLEAN` | 投入前に既存レコードを全削除する |
+| `USERS` | ユーザー選択 `担当者user` に入れるログイン名。既定は**ログイン中のあなた 1 名**で、これで「自分の担当分だけ」のペインが動きます。最大 12 名 |
+| `END` | 日付の終端。`""` ならば今日 |
 
-**日付は実行日から逆算して作られます。**「今月」「先月」のペインが常に動くようにするためです。裏返すと、**日をまたいで入れ直すと数字が変わります**。同じ数字を保ちたいときは `--end` を固定してください。
+**日付は実行日から逆算して作られます。**「今月」「先月」のペインが常に動くようにするためです。裏返すと、**日をまたいで入れ直すと数字が変わります**。同じ数字を保ちたいときは `END` を `"2026-08-15"` のように固定してください。
 
 ### 3. ダッシュボードを取り込む
 
